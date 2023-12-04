@@ -5,13 +5,14 @@
 package conexion;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import oracle.ucp.jdbc.PoolDataSource;
+import oracle.ucp.jdbc.PoolDataSourceFactory;
 
 /**
  *
@@ -23,16 +24,38 @@ public class ConexionDBex {
         PoolDataSource pds = null;
         Connection conexion = null;
         try {
-            // Intentar establecer la conexión
-            conexion = DriverManager.getConnection("jdbc:mysql://localhost:3307/ecuamayferrr", "root", "admin");
-
+            // con esto aseguramos que las conexiones se usan de forma eficiente (Pools Connection)
+            //crea la instanca con elpool
+            pds = PoolDataSourceFactory.getPoolDataSource();
+            //introducimos las condiciones de la conexión
+            pds.setConnectionFactoryClassName("com.mysql.cj.jdbc.Driver");
+            pds.setURL("jdbc:mysql://localhost:3307/ecuamayferrr");
+            pds.setUser("root");
+            pds.setPassword("admin");
+            pds.setInitialPoolSize(5);
+            
+            //Obtenemos la conexion con la base de datos.
+            conexion = pds.getConnection();
+            
+            System.out.println("\nConnection obtained from users");
+            
+            //Se ejecutan las operaciones con las bases de datos
+            Statement stmt = conexion.createStatement();
+            stmt.execute("select * from users");
+            
+            //**********  Ejecutamos las operacion con las bases de datos *********
+            
+            
             // Si no se lanza ninguna excepción, la conexión fue exitosa
             System.out.println("Conexión exitosa a la base de datos");
             
             //Añadir usuario
-            aniadirUsuario(conexion, "usuariopepe", "passwordpepe");
+            aniadirUsuario(conexion, "Luis", "1234");
+            
+            //Eliminar usuario
+            eliminarUsuario(conexion, "usuariopepe");
 
-            // Realizar operaciones con la conexión
+            // Realizar operaciones con la conexión mostramos los usuarios dentro de la tabla
             String consulta = "select * from users where username = ?";
             String consultaTodo = "select * from users";
             PreparedStatement sentencia = conexion.prepareStatement(consulta);
@@ -60,7 +83,7 @@ public class ConexionDBex {
         } catch (SQLException ex) {
             // Manejar la excepción en caso de error de conexión
             System.out.println("Error al conectar a la base de datos: " + ex.getMessage());
-            ex.printStackTrace(); // Esto imprime la traza de la excepción para obtener más detalles
+            ex.printStackTrace(); // Esto imprime la traza de la excepción para obtener más detalles visto en clases
         } finally {
             // Cerrar la conexión en el bloque finally para asegurar que siempre se cierre
             try {
@@ -94,6 +117,12 @@ public class ConexionDBex {
             // Manejar la excepción en caso de error de la consulta
             System.out.println("Error al insertar usuario: " + ex.getMessage());
             ex.printStackTrace(); // Esto imprime la traza de la excepción para obtener más detalles
+            try {
+                conexion.close();
+            } catch (SQLException ex1) {
+                //Para cerrar la conexion java nos ha pedido crear este catch
+                Logger.getLogger(ConexionDBex.class.getName()).log(Level.SEVERE, null, ex1);
+            }
             return false; // Indicar que la operación falló
         }
     }
@@ -121,6 +150,12 @@ public class ConexionDBex {
         // Manejar la excepción en caso de error de la consulta
         System.out.println("Error al eliminar usuario: " + ex.getMessage());
         ex.printStackTrace(); // Esto imprime la traza de la excepción para obtener más detalles
+        try {
+            conexion.close();
+        } catch (SQLException ex1) {
+            //Para cerrar la conexion java nos ha pedido crear este catch
+            Logger.getLogger(ConexionDBex.class.getName()).log(Level.SEVERE, null, ex1);
+        }
         return false; // Indicar que la operación falló
     }
 }
