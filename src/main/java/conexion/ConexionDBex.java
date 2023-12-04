@@ -102,6 +102,8 @@ public class ConexionDBex {
             // Realizar operaciones con la conexión , IMPORTANTE; SI NO PONEMOS (USERNAME, PASSWORD) Y PONEMOS DIRECTAMENTE
             //VALUES TENEMOS QUE ESPECIFICAR EN EL CAMPO DE ID(NULL,?,?,?...) POR EJEMPLO.
             String insercion = "INSERT INTO users (username, password) VALUES (?, ?)";
+            //Con las sentencias preparadas evitamos que nos hagan injectSql y también nos permite ahorrarnos la construccion
+            //de planes de ejecución
             PreparedStatement sentencia = conexion.prepareStatement(insercion);
             sentencia.setString(1, user);
             sentencia.setString(2, password);
